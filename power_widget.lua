@@ -175,7 +175,7 @@ local function update_tooltip(widget)
 		local charge_status_msg = ""
 		local what
 		local when
-		if device.type == power.enums.DeviceType.Battery then
+		if device.type == "Battery" then
 			if device.TimeToEmpty > 0 then
 				what = "Empty"
 				when = device.TimeToEmpty
@@ -183,12 +183,15 @@ local function update_tooltip(widget)
 				what = "Full"
 				when = device.TimeToFull
 			end
+
 			if when then
 				charge_status_msg = string.format("\n%s in %s", what, to_hour_min_str(when))
+			else
+				-- Optional: Show this if the battery is calculating time
+				charge_status_msg = "\nCalculating time..."
 			end
 		end
-
-		widget.tooltip:set_text(string.format("%d%% - %s%s", percentage, device.state.name, charge_status_msg))
+		widget.tooltip:set_text(string.format("%d%% - %s%s", percentage, device.state, charge_status_msg))
 	else
 		-- We don't know how we're powered, but we must be somehow!
 		widget.tooltip:set_text("Plugged In")
