@@ -43,9 +43,21 @@ local icon_flags = { IconLookupFlags.GENERIC_FALLBACK }
 local notification = nil
 local device = nil
 
-local power_widget = wibox.widget({
+local icon_widget = wibox.widget({
 	resize = true,
 	widget = wibox.widget.imagebox,
+})
+
+local text_widget = wibox.widget({
+	widget = wibox.widget.textbox,
+	font = "Sans 10", -- You can adjust your font here
+})
+
+local power_widget = wibox.widget({
+	layout = wibox.layout.fixed.horizontal,
+	spacing = 4, -- Space between icon and text
+	icon_widget,
+	text_widget,
 })
 
 local function get_percentage()
@@ -58,12 +70,17 @@ local function get_percentage()
 	return 0
 end
 
-local function update_icon(widget)
+local function update_icon()
 	local icon = icon_theme:lookup_icon(device.IconName, icon_size, icon_flags)
 
 	if icon then
-		widget.image = icon:load_surface()
+		icon_widget.image = icon:load_surface()
 	end
+end
+
+local function update_text()
+	local pct = get_percentage()
+	text_widget.text = string.format("%d%%", pct)
 end
 
 local function maybe_warn(widget, warning_condition, notification_preset, message)
@@ -240,7 +257,8 @@ local function update(widget)
 	for _, prop in ipairs(MappingsList) do
 		update_mapping(device, prop)
 	end
-	update_icon(widget)
+	update_icon()
+	update_text()
 	update_tooltip(widget)
 
 	local critical_warn = should_warn_critical(widget)
