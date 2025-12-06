@@ -19,10 +19,10 @@ local wibox = require("wibox")
 local awful = require("awful")
 local naughty = require("naughty")
 
-local lgi = require("lgi")
-local gtk = lgi.require("Gtk", "3.0")
-local icon_theme = gtk.IconTheme.get_default()
-local IconLookupFlags = gtk.IconLookupFlags
+-- local lgi = require("lgi")
+-- local gtk = lgi.require("Gtk", "3.0")
+-- local icon_theme = gtk.IconTheme.get_default()
+-- local IconLookupFlags = gtk.IconLookupFlags
 
 local power = require("upower_dbus")
 local WarningLevel = power.enums.BatteryWarningLevel
@@ -39,13 +39,16 @@ local function to_hour_min_str(seconds)
 end
 
 local icon_size = 64
-local icon_flags = { IconLookupFlags.GENERIC_FALLBACK }
+-- local icon_flags = { IconLookupFlags.GENERIC_FALLBACK }
 local notification = nil
 local device = nil
+local icon_font = "Nerd Font 14"
 
 local icon_widget = wibox.widget({
-	resize = true,
-	widget = wibox.widget.imagebox,
+	widget = wibox.widget.textbox,
+	font = icon_font,
+	align = "center",
+	valign = "center",
 })
 
 local text_widget = wibox.widget({
@@ -70,17 +73,83 @@ local function get_percentage()
 	return 0
 end
 
-local function update_icon()
-	local icon = icon_theme:lookup_icon(device.IconName, icon_size, icon_flags)
-
-	if icon then
-		icon_widget.image = icon:load_surface()
+local function get_battery_glyph(pct, state)
+	-- If charging, show a plug or charging battery
+	if state == power.enums.BatteryState.Charging then
+		return " " -- Plug icon (f1e6)
 	end
+
+	if pct >= 95 then
+		return " 󰁹"
+	end
+	if pct >= 90 then
+		return " 󰂂"
+	end
+	if pct >= 80 then
+		return " 󰂁"
+	end
+	if pct >= 70 then
+		return " 󰂀"
+	end
+	if pct >= 60 then
+		return " 󰁿"
+	end
+	if pct >= 50 then
+		return " 󰁾"
+	end
+	if pct >= 40 then
+		return " 󰁽"
+	end
+	if pct >= 30 then
+		return " 󰁼"
+	end
+	if pct >= 20 then
+		return " 󰁻"
+	end
+	if pct >= 10 then
+		return " 󰢜 "
+	end
+	return " 󰂎"
+end
+
+local beautiful = require("beautiful") -- Optional: if you want to use theme colors
+
+local function get_color(pct, state)
+	-- 1. If charging, always return a specific color (e.g., Green)
+	if state == power.enums.BatteryState.Charging then
+		return "#98be65"
+	end
+
+	-- 2. If discharging, change color based on percentage
+	if pct <= 20 then
+		return "#ff6c6b"
+	elseif pct <= 40 then
+		return "#ecbe7b"
+	elseif pct <= 50 then
+		return "#5db0f5"
+	elseif pct <= 70 then
+		return "#1a8eed"
+	elseif pct <= 80 then
+		return "#095899"
+	elseif pct <= 90 then
+		return "#348f0d"
+	else
+		return "#164502"
+	end
+end
+
+local function update_icon()
+	local pct = get_percentage()
+	local glyph = get_battery_glyph(pct, device.state)
+	local color = get_color(pct, device.state)
+
+	icon_widget.markup = string.format("<span foreground='%s'>%s</span>", color, glyph)
 end
 
 local function update_text()
 	local pct = get_percentage()
-	text_widget.text = string.format("%d%%", pct)
+	local color = get_color(pct, device.state)
+	text_widget.markup = string.format("<span foreground='%s'>%d%%</span>", color, pct)
 end
 
 local function maybe_warn(widget, warning_condition, notification_preset, message)
