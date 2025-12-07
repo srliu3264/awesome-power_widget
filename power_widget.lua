@@ -181,11 +181,10 @@ local function update_text()
 	local color = get_color(pct, device.state)
 	text_widget.markup = string.format("<span foreground='%s'>%d%%</span>", color, pct)
 end
-
 local function maybe_warn(widget, warning_condition, notification_preset, message)
 	if warning_condition then
-		local warning_level = device.warninglevel or power.enums.BatteryWarningLevel.None
-		local msg = message or (warning_level.name == "None" and "Low" or warning_level.name) .. " battery!"
+		local warning_level = device.warninglevel or "None"
+		local msg = message or (warning_level == "None" and "Low" or warning_level) .. " battery!"
 
 		if notification then
 			naughty.destroy(notification, naughty.notificationClosedReason.dismissedByCommand)
@@ -227,21 +226,19 @@ local function update_tooltip(widget)
 		widget.tooltip:set_text("Plugged In")
 	end
 end
-
 local function should_warn_critical(widget)
 	if not device.IsPresent then
 		return false
 	end
-
 	local percentage = get_percentage()
+	if device.state ~= "Discharging" then
+		return false
+	end
 
 	return (
-		device.state == power.enums.BatteryState.Discharging
-		and (
-			percentage <= widget.critical_percentage
-			or device.warninglevel == WarningLevel.Low
-			or device.warninglevel == WarningLevel.Critical
-		)
+		percentage <= widget.critical_percentage
+		or device.warninglevel == "Low"
+		or device.warninglevel == "Critical"
 	)
 end
 
@@ -366,17 +363,13 @@ local function update(widget)
 	local critical_warn = should_warn_critical(widget)
 
 	maybe_warn(widget, critical_warn, naughty.config.presets.critical)
-
 	if not critical_warn then
-		maybe_warn(
-			widget,
-			get_percentage() <= widget.warning_config.percentage,
-			widget.warning_config.preset,
-			widget.warning_config.message
-		)
+		local should_warn = (get_percentage() <= widget.warning_config.percentage) and (device.state == "Discharging")
+
+		maybe_warn(widget, should_warn, widget.warning_config.preset, widget.warning_config.message)
 	end
 
-	if device.state ~= power.enums.BatteryState.Discharging and notification then
+	if device.state ~= "Discharging" and notification then
 		naughty.destroy(notification, naughty.notificationClosedReason.dismissedByCommand)
 	end
 end
@@ -394,8 +387,7 @@ local function init(widget)
 	widget.critical_percentage = 5
 
 	widget.warning_config = {
-		percentage = -1, -- disabled by default
-		-- https://awesomewm.org/doc/api/libraries/naughty.html#config.presets
+		percentage = 20,
 		preset = naughty.config.presets.normal,
 	}
 
