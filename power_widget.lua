@@ -74,9 +74,39 @@ local function get_percentage()
 end
 
 local function get_battery_glyph(pct, state)
-	-- If charging, show a plug or charging battery
-	if state == power.enums.BatteryState.Charging then
-		return " " -- Plug icon (f1e6)
+	local is_charging = (state == power.enums.BatteryState.Charging) or (state == 1) or (state == "Charging")
+	if is_charging then
+		if pct >= 95 then
+			return " 󰂅 "
+		end
+		if pct >= 90 then
+			return " 󰂋 "
+		end
+		if pct >= 80 then
+			return " 󰂊 "
+		end
+		if pct >= 70 then
+			return " 󰢞 "
+		end
+		if pct >= 60 then
+			return " 󰂉 "
+		end
+		if pct >= 50 then
+			return " 󰢝 "
+		end
+		if pct >= 40 then
+			return " 󰂈 "
+		end
+		if pct >= 30 then
+			return " 󰂇 "
+		end
+		if pct >= 20 then
+			return " 󰂆 "
+		end
+		if pct >= 10 then
+			return " 󰢜 "
+		end
+		return " 󰢟 "
 	end
 
 	if pct >= 95 then
@@ -107,7 +137,7 @@ local function get_battery_glyph(pct, state)
 		return " 󰁻"
 	end
 	if pct >= 10 then
-		return " 󰢜 "
+		return " "
 	end
 	return " 󰂎"
 end
@@ -116,10 +146,10 @@ local beautiful = require("beautiful") -- Optional: if you want to use theme col
 
 local function get_color(pct, state)
 	-- 1. If charging, always return a specific color (e.g., Green)
-	if state == power.enums.BatteryState.Charging then
+	-- if state == power.enums.BatteryState.Charging then
+	if state == power.enums.BatteryState.Charging or state == 1 or state == "Charging" then
 		return "#98be65"
 	end
-
 	-- 2. If discharging, change color based on percentage
 	if pct <= 20 then
 		return "#ff6c6b"
